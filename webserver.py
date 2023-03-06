@@ -1,53 +1,53 @@
 import socket
-import threading
 import os
 
-PORT = 6789
-SERVER_HOST = '127.0.0.1'
-WEB_ROOT = './www/'
+def handle_request(request):
+    # Extract the filename from the request
+    filename = request.split()[1]
 
-def handle_request(client_socket):
-    request_data = client_socket.recv(1024).decode()
-    request_lines = request_data.split('\r\n')
-    request_line = request_lines[0]
-    request_method, path, protocol = request_line.split()
+    # If the filename is empty, serve the index.html file
+    if filename == "/":
+        filename = "/index.html"
 
-    if path == '/':
-        path = '/index.html'
+    # Try to open the file
+    try:
+        with open("." + filename, "rb") as f:
+            content = f.read()
+            status = "200 OK"
+    except FileNotFoundError:
+        content = b"<h1>404 Not Found</h1>"
+        status = "404 Not Found"
 
-    file_path = WEB_ROOT + path
-    if not os.path.exists(file_path):
-        response_data = 'HTTP/1.1 404 Not Found\r\n'
-        response_data += 'Content-Type: text/html\r\n'
-        response_data += '\r\n'
-        response_data += '<html><body><h1>404 Not Found</h1></body></html>'
-    else:
-        with open(file_path, 'r') as f:
-            file_content = f.read()
-            response_data = 'HTTP/1.1 200 OK\r\n'
-            response_data += 'Content-Type: text/html\r\n'
-            response_data += '\r\n'
-            response_data += file_content
+    # Build the response message
+    response = f"HTTP/1.1 {status}\r\nContent-Length: {len(content)}\r\n\r\n".encode() + content
 
-    client_socket.send(response_data.encode())
-    client_socket.close()
-
+    return response
 
 def start_server():
-    print(f'Starting server on {SERVER_HOST}:{PORT}')
-
+    # Create a socket object
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind((SERVER_HOST, PORT))
+
+    # Bind the socket to a public host and port
+    server_socket.bind(('localhost', 6789))
+
+    # Listen for incoming connections
     server_socket.listen()
 
     while True:
+        # Wait for a connection
         client_socket, client_address = server_socket.accept()
-        print(f'Client connected from {client_address[0]}:{client_address[1]}')
 
-        t = threading.Thread(target=handle_request, args=(client_socket,))
-        t.start()
+        # Receive the request
+        request = client_socket.recv(1024).decode()
 
+        # Handle the request
+        response = handle_request(request)
+
+        # Send the response
+        client_socket.sendall(response)
+
+        # Close the connection
+        client_socket.close()
 
 if __name__ == '__main__':
     start_server()
