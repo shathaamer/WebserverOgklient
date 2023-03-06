@@ -23,7 +23,7 @@ def handle_request(request):
 
     return response
 
-def start_server():
+def start_server() -> object:
     # Create a socket object
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 

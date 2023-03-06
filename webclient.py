@@ -1,30 +1,18 @@
-import socket
 import sys
+from socket import *
 
-def make_request(server_host, server_port, filename):
-    # Create a socket object
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    # Connect to the server
-    client_socket.connect((server_host, server_port))
-
-    # Build the request message
-    request = f"GET {filename} HTTP/1.1\r\nHost: {server_host}\r\n\r\n".encode()
-
-    # Send the request
-    client_socket.sendall(request)
-
-    # Receive the response
-    response = client_socket.recv(1024)
-
-    # Close the connection
-    client_socket.close()
-
-    return response
-
-if __name__ == '__main__':
-    server_host = sys.argv[1]
-    server_port = int(sys.argv[2])
-    filename = sys.argv[3]
-    response = make_request(server_host, server_port, filename)
-    print(response.decode())
+server_host = sys.argv[1]
+server_port = int(sys.argv[2])
+filename = sys.argv[3]
+client_socket = socket(AF_INET, SOCK_STREAM)
+client_socket.connect((server_host, server_port))
+request = 'GET /{} HTTP/1.1\r\nHost: {}\r\n\r\n'.format(filename, server_host)
+client_socket.send(request.encode())
+response = ''
+while True:
+    recv_data = client_socket.recv(1024).decode()
+    if not recv_data:
+        break
+    response += recv_data
+print(response)
+client_socket.close()

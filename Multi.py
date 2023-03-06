@@ -1,32 +1,16 @@
-import socket
-import os
-import threading
+import sys
+from socket import *
 
-def handle_request(request):
-    # Extract the filename from the request
-    filename = request.split()[1]
-
-    # If the filename is empty, serve the index.html file
-    if filename == "/":
-        filename = "/index.html"
-
-    # Try to open the file
-    try:
-        with open("." + filename, "rb") as f:
-            content = f.read()
-            status = "200 OK"
-    except FileNotFoundError:
-        content = b"<h1>404 Not Found</h1>"
-        status = "404 Not Found"
-
-    # Build the response message
-    response = f"HTTP/1.1 {status}\r\nContent-Length: {len(content)}\r\n\r\n".encode() + content
-
-    return response
-
-def handle_connection(client_socket, client_address):
-    # Receive the request
-    request = client_socket.recv(1024).decode()
-
-    # Handle the request
-    response = handle_request
+server_host = 'localhost'
+server_port = 6789
+filename = 'index.html'
+bot_socket = socket(AF_INET, SOCK_STREAM)
+bot_socket.connect((server_host, server_port))
+request = 'GET /{} HTTP/1.1\r\nHost: {}\r\n\r\n'.format(filename, server_host)
+bot_socket.send(request.encode())
+response = bot_socket.recv(1024).decode()
+if '200 OK' in response:
+    print('The web server is running properly.')
+else:
+    print('There is something wrong with the web server.')
+bot_socket.close()
